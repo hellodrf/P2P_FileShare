@@ -232,8 +232,7 @@ public class FileSharingPeer {
 
 	/**
 	 * Process a query response from the index server and download the file
-	 * 
-	 * @param queryResponse
+	 *
 	 * @throws InterruptedException
 	 */
 	private static void getFileFromPeer(PeerManager peerManager, String response) throws InterruptedException {

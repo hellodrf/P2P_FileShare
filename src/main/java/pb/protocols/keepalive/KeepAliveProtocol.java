@@ -117,9 +117,7 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 	public void startAsServer() {
 		timeRequestSeen = Instant.now().toEpochMilli();
 		// set a timeout callback
-		Utils.getInstance().setTimeout(()->{
-			checkClientTimeout();
-		}, keepAliveTimeout);
+		Utils.getInstance().setTimeout(this::checkClientTimeout, keepAliveTimeout);
 	}
 	
 	/**
@@ -134,9 +132,7 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 			stopProtocol();
 		} else {
 			// set a timeout callback
-			Utils.getInstance().setTimeout(()->{
-				checkClientTimeout();
-			}, keepAliveTimeout);
+			Utils.getInstance().setTimeout(this::checkClientTimeout, keepAliveTimeout);
 		}
 	}
 	

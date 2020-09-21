@@ -143,13 +143,9 @@ public class IndexServer {
 			synchronized(lastTimeSeen) {
 				if(keyValueMap.containsKey(hit)) {
 					List<String> peers = new ArrayList<String>(keyValueMap.get(hit));
-					Collections.sort(peers,
-					new Comparator<String>() {
-						@Override
-						public int compare(String o1, String o2) {
-							// sort largest to smallest
-							return lastTimeSeen.get(o2).compareTo(lastTimeSeen.get(o1));
-						}
+					peers.sort((o1, o2) -> {
+						// sort largest to smallest
+						return lastTimeSeen.get(o2).compareTo(lastTimeSeen.get(o1));
 					});
 					log.info("Sending query response: "+peers.get(0)+":"+hit);
 					client.emit(queryResponse, peers.get(0)+":"+hit);
@@ -203,7 +199,7 @@ public class IndexServer {
 		System.exit(-1);
 	}
 	
-	public static void main( String[] args ) throws IOException
+	public static void main(String[] args) throws IOException
     {
     	// set a nice log format
 		System.setProperty("java.util.logging.SimpleFormatter.format",
@@ -229,15 +225,15 @@ public class IndexServer {
 				help(options);
 			}
         }
-        
-        /**
+
+        /*
 		 * TODO: for Project 2B. Create a "-password" option that reads a string
 		 * password from the user at the command line. Use the
 		 * ServerManager(port,password) initializer (that needs to be created by you in
 		 * ServerMain.java) if the password was given.
 		 */
-        
-        
+
+
         // create a server manager and setup event handlers
         ServerManager serverManager = new ServerManager(port);
         

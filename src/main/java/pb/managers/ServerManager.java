@@ -63,7 +63,7 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 	 */
 	public static final String sessionError="SESSION_ERROR";
 	
-	/**
+	/*
 	 * TODO for project 2A. Make the server listen to these events
 	 * on all client connections and call the appropriate shutdown method
 	 * if the received password matches the password for this server.
@@ -136,12 +136,12 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 		setName("ServerManager"); // name the thread, urgh simple log can't print it :-(
 	}
 	
-	/**
+	/*
 	 * TODO: for Project 2B. Create an initializer that does as above but also takes
 	 * a password as an argument.
 	 */
 	
-	/**
+	/*
 	 * TODO: for Project 2B. Use one of these methods appropriately for the event
 	 * emitted, when your server receives a correct password. Usually a single
 	 * shutdown method would suffice, but for servers it is convenient to have
@@ -449,8 +449,4 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 		localEmit(sessionError,endpoint);
 		endpoint.close();
 	}
-
-	
-
-	
 }

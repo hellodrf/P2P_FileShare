@@ -42,7 +42,7 @@ public class AdminClient  {
 		System.exit(-1);
 	}
 	
-	public static void main( String[] args ) throws IOException, InterruptedException
+	public static void main(String[] args) throws IOException, InterruptedException
     {
     	// set a nice log format
 		System.setProperty("java.util.logging.SimpleFormatter.format",
@@ -52,13 +52,17 @@ public class AdminClient  {
         Options options = new Options();
         options.addOption("port",true,"server port, an integer");
         options.addOption("host",true,"hostname, a string");
+		options.addOption("password",true,"password, a string");
+		options.addOption("shutdown",false,"password, a string");
+		options.addOption("force",false,"password, a string");
+		options.addOption("vader",false,"password, a string");
         
         /*
 		 * TODO for project 2B. Include a command line option to read a secret
 		 * (password) from the user. It can simply be a plain text password entered as a
 		 * command line option. Use "password" as the name of the option, i.e.
 		 * "-password". Add a boolean option (i.e. it does not have an argument) for
-		 * each of the shutdown possibilities: shutdown, force, vader. In otherwords,
+		 * each of the shutdown possibilities: shutdown, force, vader. In other words,
 		 * the user would enter -shutdown for just regular shutdown, -shutdown -force
 		 * for force shutdown and -shutdown -vader for vader shutdown.
 		 */

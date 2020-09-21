@@ -20,7 +20,7 @@ public class Eventable extends Thread {
 	/**
 	 * Event callbacks
 	 */
-	private Map<String,List<IEventCallback>> callbacks;
+	private final Map<String,List<IEventCallback>> callbacks;
 	
 	/**
 	 * Initializer
@@ -41,10 +41,9 @@ public class Eventable extends Thread {
 		boolean hit=false;
 		if(callbacks.containsKey("*")) {
 			callbacks.get("*").forEach((callback)->{
-				// TODO: make this little bit of code more efficient
-				Object[] newargs=new Object[args.length+1];
-				newargs[0]=eventName;
-				for(int i=0;i<args.length;i++) newargs[i+1]=args[i];
+				Object[] newargs = new Object[args.length+1];
+				newargs[0] = eventName;
+				System.arraycopy(args, 0, newargs, 1, args.length);
 				callback.callback(newargs);
 			});
 			hit=true;

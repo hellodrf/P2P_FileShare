@@ -13,6 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.cli.CommandLine;
@@ -30,6 +33,7 @@ import pb.managers.PeerManager;
 import pb.managers.ServerManager;
 import pb.managers.endpoint.Endpoint;
 import pb.utils.Utils;
+
 
 /**
  * TODO: for Project 2B The FileSharingPeer is a simple example of using a
@@ -185,14 +189,28 @@ public class FileSharingPeer {
 		// connect to the index server and tell it the files we are sharing
 		ClientManager clientManager = peerManager.connect(indexServerPort, host);
 
-		/*
+		/* Done
 		 * TODO for project 2B. Listen for peerStarted, peerUpdate, peerStopped on the
-		 * clientManager. Further listen on the endpoint when available for
+		 * clientManager.
+		 * Further listen on the endpoint when available for
 		 * indexUpdateError events. Print out any index update errors that occur. Use
 		 * emitIndexUpdate(...) to send the index updates. Print out something
 		 * informative for the events when they they occur.
 		 */
-
+		clientManager.on(PeerManager.peerStarted, (args) -> {
+			Endpoint endpoint = (Endpoint) args[0];
+			log.info("IndexServer session started: " + endpoint.getOtherEndpointId());
+			endpoint.on(IndexServer.indexUpdateError, (args1 ->
+					log.warning("An error occurred while updating index: " + args1[0])));
+			// push index update
+			emitIndexUpdate(peerport, filenames, endpoint, clientManager);
+		}).on(PeerManager.peerError, (args) -> {
+			Endpoint endpoint = (Endpoint) args[0];
+			log.warning("IndexServer session ended in error: " + endpoint.getOtherEndpointId());
+		}).on(PeerManager.peerStopped, (args) -> {
+			Endpoint endpoint = (Endpoint) args[0];
+			log.info("IndexServer session ended: " + endpoint.getOtherEndpointId());
+		});
 		clientManager.start();
 	}
 
@@ -205,21 +223,49 @@ public class FileSharingPeer {
 	 * @throws IOException
 	 */
 	private static void shareFiles(String[] files) throws InterruptedException, IOException {
-		List<String> filenames = new ArrayList<String>();
-		for (String file : files) {
-			filenames.add(file);
-		}
+		List<String> filenames = new ArrayList<>(Arrays.asList(files));
 		PeerManager peerManager = new PeerManager(peerPort);
 
 		/*
 		 * TODO for project 2B. Listen for peerStarted, peerStopped, peerError and
-		 * peerServerManager on the peerManager. Listen for getFile events on the
-		 * endpoint when available and use startTransmittingFile(...) to handle such
+		 * peerServerManager on the peerManager.
+		 * Listen for getFile events on the endpoint when available and use startTransmittingFile(...) to handle such
 		 * events. Start uploading the file names that are being shared on when the
 		 * peerServerManager is ready and when the ioThread event has been received.
 		 * Print out something informative for the events when they occur.
 		 */
 
+		peerManager.on(PeerManager.peerStarted, (args)-> {
+			Endpoint endpoint = (Endpoint) args[0];
+			log.info("Peer session started: " + endpoint.getOtherEndpointId());
+			endpoint.on(fileError, (args1 -> {
+				log.warning("Could not find file queried by " + endpoint.getOtherEndpointId());
+			})).on(getFile, (args2 -> {
+				String file = (String)args2[0];
+				startTransmittingFile(file, endpoint);
+			}));
+		}).on(PeerManager.peerStopped, (args)-> {
+			Endpoint endpoint = (Endpoint) args[0];
+			log.info("Peer session ended: " + endpoint.getOtherEndpointId());
+
+		}).on(PeerManager.peerError, (args)-> {
+			Endpoint endpoint = (Endpoint) args[0];
+			log.severe("IndexServer session ended in error: " + endpoint.getOtherEndpointId());
+
+		}).on(PeerManager.peerServerManager, (args) -> {
+			ServerManager serverManager = (ServerManager) args[0];
+			serverManager.on(IOThread.ioThread, (args1)->{
+				String peerPort = (String) args1[0];
+				log.info("Listening on Internet address: " + peerPort);
+				try {
+					uploadFileList(filenames, peerManager, peerPort);
+				} catch (UnknownHostException e) {
+					log.severe("Could not connect to index server");
+				} catch (InterruptedException e) {
+					log.warning("IndexServer session ended abruptly");
+				}
+			});
+		});
 		peerManager.start();
 
 		// just keep sharing until the user presses "return"
@@ -239,14 +285,33 @@ public class FileSharingPeer {
 		// Create a independent client manager (thread) for each download
 		// response has the format: PeerIP:PeerPort:filename
 		String[] parts = response.split(":", 3);
-		ClientManager clientManager = null;
+		ClientManager clientManager;
 
 		/*
+		 * Done.
 		 * TODO for project 2B. Check that the individual parts returned from the server
 		 * have the correct format and that we make a connection to the peer. Print out
 		 * any errors and just return in this case. Otherwise you have a clientManager
 		 * that has connected.
 		 */
+
+		String ipv4_regex = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}" +
+				"(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
+
+		String port_regex = "([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}" +
+				"|65[0-4][0-9]{2}|655[0-3][0-9]|6553[0-5])";
+
+		if (parts[0].matches(ipv4_regex) && parts[1].matches(port_regex)) {
+			try {
+				clientManager = new ClientManager(parts[0], Integer.parseInt(parts[1]));
+			} catch (UnknownHostException e) {
+				log.severe("Could not connect to peer: " + parts[0] + ":" + parts[1]);
+				return;
+			}
+		} else {
+			log.severe("Illegal peer address: " + parts[0] + ":" + parts[1]);
+			return;
+		}
 
 		try {
 			OutputStream out = new FileOutputStream(parts[2]);

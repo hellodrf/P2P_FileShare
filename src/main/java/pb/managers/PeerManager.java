@@ -130,9 +130,8 @@ public class PeerManager extends Manager {
 	@Override
 	public void shutdown() {
 		serverManager.shutdown();
-		clientManagers.forEach((clientManager)->{
-			clientManager.shutdown(); // client manager will send a session stop
-		});
+		// client manager will send a session stop
+		clientManagers.forEach(ClientManager::shutdown);
 	}
 	
 	@Override

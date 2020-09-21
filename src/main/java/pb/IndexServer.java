@@ -208,16 +208,18 @@ public class IndexServer {
     	// parse command line options
         Options options = new Options();
         options.addOption("port",true,"server port, an integer");
+		options.addOption("password",true,"password, an string");
         
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
         try {
-			cmd = parser.parse( options, args);
+			cmd = parser.parse(options, args);
 		} catch (ParseException e1) {
 			help(options);
 		}
-        
-        if(cmd.hasOption("port")){
+
+		assert cmd != null;
+		if(cmd.hasOption("port")){
         	try{
         		port = Integer.parseInt(cmd.getOptionValue("port"));
 			} catch (NumberFormatException e){
@@ -226,13 +228,19 @@ public class IndexServer {
 			}
         }
 
-        /*
+        /* Done
 		 * TODO: for Project 2B. Create a "-password" option that reads a string
 		 * password from the user at the command line. Use the
 		 * ServerManager(port,password) initializer (that needs to be created by you in
 		 * ServerMain.java) if the password was given.
 		 */
 
+		if(cmd.hasOption("password")){
+			String password = cmd.getOptionValue("port");
+			if (password!=null) {
+				ServerManager serverManager = new ServerManager(port, password);
+			}
+		}
 
         // create a server manager and setup event handlers
         ServerManager serverManager = new ServerManager(port);

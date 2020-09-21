@@ -140,7 +140,12 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 	 * TODO: for Project 2B. Create an initializer that does as above but also takes
 	 * a password as an argument.
 	 */
-	
+	public ServerManager(int port, String password) {
+		this.port=port;
+		liveEndpoints=new HashSet<>();
+		setName("ServerManager"); // name the thread, urgh simple log can't print it :-(
+
+	}
 	/*
 	 * TODO: for Project 2B. Use one of these methods appropriately for the event
 	 * emitted, when your server receives a correct password. Usually a single

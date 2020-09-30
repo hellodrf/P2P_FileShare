@@ -103,7 +103,12 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 	 * endpoint threads and this server manager thread; so synchronized is needed.
 	 */
 	private final Set<Endpoint> liveEndpoints;
-	
+
+	/**
+	 * Privileged/admin endpoint, need to be the last one to shutdown
+	 */
+	private final Set<Endpoint> privilegedEndpoints = new HashSet<>();
+
 	/**
 	 * The port for this server.
 	 */
@@ -118,6 +123,7 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 	 * Should we force shutdown and not even wait for endpoints to close.
 	 */
 	private volatile boolean vaderShutdown=false;
+
 
 	/**
 	 * Password of this server, sha256 hashed without salt.
@@ -150,7 +156,7 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 	 * Check the password provided. If no password was set, return true (access allowed).
 	 * @param password to be checked
 	 */
-	public boolean verifyPassword(String password) {
+	private boolean verifyPassword(String password) {
 		if (this.password == null) {
 			return true;
 		} else {
@@ -223,26 +229,45 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 		
 		// if we want to tell clients to end session
 		// it is indeed possible that both may be set true
+
 		if(forceShutdown && !vaderShutdown) {
 			// let's send a stop session to existing clients
 			synchronized(liveEndpoints) {
-				liveEndpoints.forEach((endpoint)->{
-					SessionProtocol sessionProtocol=(SessionProtocol) endpoint.getProtocol("SessionProtocol");
-					if(sessionProtocol!=null)
-						sessionProtocol.stopSession();
-				});
+				synchronized (privilegedEndpoints) {
+					liveEndpoints.forEach((endpoint) -> {
+						if (!privilegedEndpoints.contains(endpoint)){
+							SessionProtocol sessionProtocol=(SessionProtocol) endpoint.getProtocol("SessionProtocol");
+							if(sessionProtocol!=null)
+								sessionProtocol.stopSession();
+						}
+					});
+					// ensure privileged endpoints get to shutdown last
+					privilegedEndpoints.forEach((endpoint) -> {
+						SessionProtocol sessionProtocol=(SessionProtocol) endpoint.getProtocol("SessionProtocol");
+						if(sessionProtocol!=null)
+							sessionProtocol.stopSession();
+					});
+				}
 			}
 		}
-		
+
 		// in this case we just close the endpoints, which will likely cause
 		// abrupt disconnection
 		if(vaderShutdown) {
 			// let's just close everything
 			synchronized(liveEndpoints) {
-				liveEndpoints.forEach(Endpoint::close);
+				synchronized (privilegedEndpoints) {
+					liveEndpoints.forEach((endpoint) -> {
+						if (!privilegedEndpoints.contains(endpoint)){
+							endpoint.close();
+						}
+					});
+					// ensure privileged endpoints get to shutdown last
+					privilegedEndpoints.forEach(Endpoint::close);
+				}
 			}
 		}
-		
+
 		// let's wait for the remaining clients if we can
 		while(numLiveEndpoints()>0 && !vaderShutdown) {
 			log.warning("still waiting for "+numLiveEndpoints()+" to finish");
@@ -294,26 +319,26 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 		synchronized(liveEndpoints) {
 			liveEndpoints.add(endpoint);
 		}
-		
-		/*
-		 * TODO: For Project2B Insert code here to ensure that the server listens on the
-		 * endpoint for shutdown events and calls the appropriate method. Use simple
-		 * authentication, where the string data for the event contains a secret that
-		 * that is provided by the client on its command line, and provided on the
-		 * command line when the server is running. If the secrets match then the
-		 * shutdown is issued, otherwise it is ignored.
-		 */
 
 		endpoint.on(shutdownServer, (args) -> {
 			if (verifyPassword((String) args[0])) {
+				synchronized (privilegedEndpoints) {
+					privilegedEndpoints.add(endpoint);
+				}
 				shutdown();
 			}
 		}).on(forceShutdownServer, (args) -> {
 			if (verifyPassword((String) args[0])) {
+				synchronized (privilegedEndpoints) {
+					privilegedEndpoints.add(endpoint);
+				}
 				forceShutdown();
 			}
 		}).on(vaderShutdownServer, (args) -> {
 			if (verifyPassword((String) args[0])) {
+				synchronized (privilegedEndpoints) {
+					privilegedEndpoints.add(endpoint);
+				}
 				vaderShutdown();
 			}
 		});

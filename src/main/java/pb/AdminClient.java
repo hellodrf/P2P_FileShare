@@ -32,7 +32,7 @@ import pb.utils.Utils;
  *
  */
 public class AdminClient  {
-	private static Logger log = Logger.getLogger(AdminClient.class.getName());
+	private static final Logger log = Logger.getLogger(AdminClient.class.getName());
 	private static int port=Utils.serverPort; // default port number for the server
 	private static String host=Utils.serverHost; // default host for the server
 
@@ -108,29 +108,31 @@ public class AdminClient  {
         // from terminating immediately
         ClientManager clientManager = new ClientManager(host,port);
         clientManager.start();
-        
-        /*
-		 * TODO for project 2B. Emit an appropriate shutdown event to the server,
-		 * sending the password. Then shutdown the clientManager. The following line
-		 * will wait for the client manager session to stop cleanly (or otherwise).
-		 * Don't forget that you need to modify ServerMain.java to listen for these
-		 * events coming from any client that connects to it.
-		 */
 
 		CommandLine finalCmd = cmd;
 		String finalPassword = password;
 		clientManager.on(ClientManager.sessionStarted, (args1) -> {
 			Endpoint endpoint = (Endpoint) args1[0];
 			if (finalCmd.hasOption("shutdown")) {
-				endpoint.emit(ServerManager.shutdownServer, finalPassword);
+				if (finalCmd.hasOption("force")) {
+					endpoint.emit(ServerManager.forceShutdownServer, finalPassword);
+					log.info("Shutdown directive sent, finishing");
+				}
+				else if (finalCmd.hasOption("vader")) {
+					endpoint.emit(ServerManager.vaderShutdownServer, finalPassword);
+					log.info("Shutdown directive sent, finishing");
+				} else {
+					endpoint.emit(ServerManager.shutdownServer, finalPassword);
+					log.info("Shutdown directive sent, finishing");
+				}
 			}
-			if (finalCmd.hasOption("force")) {
-				endpoint.emit(ServerManager.forceShutdownServer, finalPassword);
-			}
-			if (finalCmd.hasOption("vader")) {
-				endpoint.emit(ServerManager.vaderShutdownServer, finalPassword);
-			}
-			clientManager.shutdown();
+			// give server time to shutdown
+			try {
+				log.info("Wait 3 seconds for server to finish up");
+				Thread.sleep(3000);
+			} catch (InterruptedException ignored) {}
+			log.info("Time is up, exiting now");
+			endpoint.close();
 		});
 
         clientManager.join();

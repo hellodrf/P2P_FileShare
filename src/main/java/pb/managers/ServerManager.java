@@ -32,9 +32,9 @@ import pb.protocols.session.SessionProtocol;
 public class ServerManager extends Manager implements ISessionProtocolHandler,
 	IKeepAliveProtocolHandler, IEventProtocolHandler
 {
-	private static Logger log = Logger.getLogger(ServerManager.class.getName());
+	private static final Logger log = Logger.getLogger(ServerManager.class.getName());
 	
-	/**
+	/*
 	 * Events emitted by the ServerManager
 	 */
 	
@@ -62,13 +62,6 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 	 * </ul>
 	 */
 	public static final String sessionError="SESSION_ERROR";
-	
-	/*
-	 * TODO for project 2A. Make the server listen to these events
-	 * on all client connections and call the appropriate shutdown method
-	 * if the received password matches the password for this server.
-	 * Events the server will listen for.
-	 */
 	
 	/**
 	 * Emitted to cause the server to shutdown. Single argument
@@ -125,27 +118,46 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 	 * Should we force shutdown and not even wait for endpoints to close.
 	 */
 	private volatile boolean vaderShutdown=false;
+
+	/**
+	 * Password of this server, sha256 hashed without salt.
+	 */
+	private String password = null;
 	
 	/**
 	 * Initialise the ServerManager with a port number for the io thread to listen on.
 	 * @param port to use when creating the io thread
 	 */
 	public ServerManager(int port) {
-		this.port=port;
-		liveEndpoints=new HashSet<>();
-		setName("ServerManager"); // name the thread, urgh simple log can't print it :-(
+		this.port = port;
+		this.liveEndpoints = new HashSet<>();
+		this.setName("ServerManager"); // name the thread, urgh simple log can't print it :-(
 	}
-	
-	/*
-	 * TODO: for Project 2B. Create an initializer that does as above but also takes
-	 * a password as an argument.
+
+	/**
+	 * Initialise the ServerManager with a password, will be hashed and stored.
+	 * @param port to use when creating the io thread
+	 * @param password set admin password for the server
 	 */
 	public ServerManager(int port, String password) {
-		this.port=port;
-		liveEndpoints=new HashSet<>();
-		setName("ServerManager"); // name the thread, urgh simple log can't print it :-(
-
+		this.port = port;
+		this.liveEndpoints = new HashSet<>();
+		this.setName("ServerManager");
+		this.password = org.apache.commons.codec.digest.DigestUtils.sha256Hex(password);
 	}
+
+	/**
+	 * Check the password provided. If no password was set, return true (access allowed).
+	 * @param password to be checked
+	 */
+	public boolean verifyPassword(String password) {
+		if (this.password == null) {
+			return true;
+		} else {
+			return org.apache.commons.codec.digest.DigestUtils.sha256Hex(password).equals(this.password);
+		}
+	}
+
 	/*
 	 * TODO: for Project 2B. Use one of these methods appropriately for the event
 	 * emitted, when your server receives a correct password. Usually a single
@@ -227,9 +239,7 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 		if(vaderShutdown) {
 			// let's just close everything
 			synchronized(liveEndpoints) {
-				liveEndpoints.forEach((endpoint)->{
-					endpoint.close();
-				});
+				liveEndpoints.forEach(Endpoint::close);
 			}
 		}
 		
@@ -248,9 +258,7 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 			if(vaderShutdown) {
 				// maybe we missed some earlier
 				synchronized(liveEndpoints) {
-					liveEndpoints.forEach((endpoint)->{
-						endpoint.close();
-					});
+					liveEndpoints.forEach(Endpoint::close);
 				}
 			}
 		}
@@ -295,7 +303,21 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 		 * command line when the server is running. If the secrets match then the
 		 * shutdown is issued, otherwise it is ignored.
 		 */
-		
+
+		endpoint.on(shutdownServer, (args) -> {
+			if (verifyPassword((String) args[0])) {
+				shutdown();
+			}
+		}).on(forceShutdownServer, (args) -> {
+			if (verifyPassword((String) args[0])) {
+				forceShutdown();
+			}
+		}).on(vaderShutdownServer, (args) -> {
+			if (verifyPassword((String) args[0])) {
+				vaderShutdown();
+			}
+		});
+
 		KeepAliveProtocol keepAliveProtocol = new KeepAliveProtocol(endpoint,this);
 		try {
 			// we need to add it to the endpoint before starting it
@@ -311,8 +333,6 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 		} catch (ProtocolAlreadyRunning e) {
 			// hmmm... already started by the client
 		}
-		
-		
 	}
 	
 	/**
@@ -393,9 +413,7 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 			// even more weird...
 			return true;
 		}
-		
 	}
-
 	
 	/*
 	 * Everything below here is handling error conditions that could

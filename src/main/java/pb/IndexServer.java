@@ -30,9 +30,9 @@ import pb.utils.Utils;
  *
  */
 public class IndexServer {
-	private static Logger log = Logger.getLogger(IndexServer.class.getName());
+	private static final Logger log = Logger.getLogger(IndexServer.class.getName());
 	
-	/**
+	/*
 	 * Events that this index server will listen to from the client.
 	 */
 	
@@ -64,7 +64,7 @@ public class IndexServer {
 	 */
 	public static final String peerUpdate = "PEER_UPDATE";
 	
-	/**
+	/*
 	 * Events that this server will send back to the client.
 	 */
 	
@@ -111,17 +111,17 @@ public class IndexServer {
 	
 
 	/**
-	 * Update the index with the filename and peerport.
+	 * Update the index with the filename and peerPort.
 	 * @param filename
-	 * @param peerport
+	 * @param peerPort
 	 */
-	private static void indexUpdate(String filename,String peerport) {
+	private static void indexUpdate(String filename,String peerPort) {
 		synchronized(keyValueMap) {
 			if(!keyValueMap.containsKey(filename)) {
 				keyValueMap.put(filename, new HashSet<String>());
 			}
-			Set<String> possiblepeers=keyValueMap.get(filename);
-			possiblepeers.add(peerport);
+			Set<String> possiblePeers=keyValueMap.get(filename);
+			possiblePeers.add(peerPort);
 		}
 	}
 	
@@ -134,7 +134,7 @@ public class IndexServer {
 	 */
 	private static void transmitHits(List<String> hits,Endpoint client) {
 		if(hits.isEmpty()) {
-			log.info("Sending blank query response");
+			log.info("Sending blank query response to signal disconnection");
 			client.emit(queryResponse, "");
 			return;
 		}
@@ -142,7 +142,7 @@ public class IndexServer {
 		synchronized(keyValueMap) {
 			synchronized(lastTimeSeen) {
 				if(keyValueMap.containsKey(hit)) {
-					List<String> peers = new ArrayList<String>(keyValueMap.get(hit));
+					List<String> peers = new ArrayList<>(keyValueMap.get(hit));
 					peers.sort((o1, o2) -> {
 						// sort largest to smallest
 						return lastTimeSeen.get(o2).compareTo(lastTimeSeen.get(o1));
@@ -152,9 +152,8 @@ public class IndexServer {
 				}
 			}
 		}
-		Utils.getInstance().setTimeout(()->{
-			transmitHits(hits,client);
-		}, 100); // transmit 10 hits per second... no real bandwidth control here.
+		Utils.getInstance().setTimeout(()-> transmitHits(hits,client), 100);
+		// transmit 10 hits per second... no real bandwidth control here.
 	}
 	
 	/**
@@ -162,32 +161,48 @@ public class IndexServer {
 	 * efficient search mechanism, but ok for testing.
 	 * @param query a comma separated list of terms to search for
 	 */
-	private static void queryIndex(String query,Endpoint client) {
+	private static void queryIndex(String query, Endpoint client) {
 		String[] terms = query.split(",");
 		Set<String> hits = new HashSet<>();
 		List<String> filenames;
 		synchronized(keyValueMap) {
-			filenames=new ArrayList<String>(keyValueMap.keySet());
+			filenames=new ArrayList<>(keyValueMap.keySet());
 		}
+		/*
 		for(String filename : filenames) {
-			String filelower=filename.toLowerCase();
+			String fileLower = filename.toLowerCase();
 			for(String term : terms) {
-				if(filelower.contains(term.toLowerCase())) {
+				if(fileLower.contains(term.toLowerCase())) {
 					hits.add(filename);
 				}
 			}
+		}*/
+
+		for(String term : terms) {
+			boolean isHit = false;
+			for(String filename : filenames) {
+				String fileLower = filename.toLowerCase();
+				if(fileLower.contains(term.toLowerCase())) {
+					hits.add(filename);
+					isHit = true;
+				}
+			}
+			if (!isHit) {
+				log.info("Cannot find file on index: " + term);
+				client.emit(queryError, term);
+			}
 		}
-		transmitHits(new ArrayList<String>(hits),client);
+		transmitHits(new ArrayList<>(hits),client);
 	}
 	
 	/**
 	 * Keep a time stamp of the last time we've seen this peer. Multiple
 	 * endpoints could call this at the same time.
-	 * @param peerport
+	 * @param peerPort
 	 */
-	private static void peerUpdate(String peerport) {
+	private static void peerUpdate(String peerPort) {
 		synchronized(lastTimeSeen) {
-			lastTimeSeen.put(peerport, Instant.now().toEpochMilli());
+			lastTimeSeen.put(peerPort, Instant.now().toEpochMilli());
 		}
 	}
 	
@@ -199,8 +214,7 @@ public class IndexServer {
 		System.exit(-1);
 	}
 	
-	public static void main(String[] args) throws IOException
-    {
+	public static void main(String[] args) throws IOException, InterruptedException {
     	// set a nice log format
 		System.setProperty("java.util.logging.SimpleFormatter.format",
                 "[%1$tl:%1$tM:%1$tS:%1$tL] [%4$s] %2$s: %5$s%n");
@@ -219,8 +233,8 @@ public class IndexServer {
 		}
 
 		assert cmd != null;
-		if(cmd.hasOption("port")){
-        	try{
+		if(cmd.hasOption("port")) {
+        	try {
         		port = Integer.parseInt(cmd.getOptionValue("port"));
 			} catch (NumberFormatException e){
 				System.out.println("-port requires a port number, parsed: "+cmd.getOptionValue("port"));
@@ -228,27 +242,22 @@ public class IndexServer {
 			}
         }
 
-        /* Done
-		 * TODO: for Project 2B. Create a "-password" option that reads a string
-		 * password from the user at the command line. Use the
-		 * ServerManager(port,password) initializer (that needs to be created by you in
-		 * ServerMain.java) if the password was given.
-		 */
-
-		if(cmd.hasOption("password")){
-			String password = cmd.getOptionValue("port");
+		// create a server manager and setup event handlers
+		ServerManager serverManager = null;
+		if(cmd.hasOption("password")) {
+			String password = cmd.getOptionValue("password");
 			if (password!=null) {
-				ServerManager serverManager = new ServerManager(port, password);
+				serverManager = new ServerManager(port, password);
 			}
+		} else {
+			serverManager = new ServerManager(port);
 		}
 
-        // create a server manager and setup event handlers
-        ServerManager serverManager = new ServerManager(port);
-        
         // event handlers
         // we must define the event handler callbacks BEFORE starting
         // the server, so that we don't miss any events.
-        serverManager.on(ServerManager.sessionStarted,(eventArgs)->{
+		assert serverManager != null;
+		serverManager.on(ServerManager.sessionStarted,(eventArgs)->{
         	Endpoint endpoint = (Endpoint)eventArgs[0];
         	log.info("Client session started: "+endpoint.getOtherEndpointId());
         	endpoint.on(indexUpdate, (eventArgs2)->{
@@ -258,8 +267,9 @@ public class IndexServer {
         		if(parts.length!=3) {
         			endpoint.emit(indexUpdateError,update);
         		} else {
-	        		String peerport = parts[0]+":"+parts[1];
-	        		indexUpdate(parts[2],peerport);
+	        		String peerPort = parts[0]+":"+parts[1];
+	        		indexUpdate(parts[2],peerPort);
+					peerUpdate(peerPort);
         		}
         	}).on(queryIndex, (eventArgs2)->{
         		String query = (String) eventArgs2[0];
@@ -279,13 +289,15 @@ public class IndexServer {
         }).on(IOThread.ioThread, (eventArgs)->{
         	String peerport = (String) eventArgs[0];
         	// we don't need this info, but let's log it
-        	log.info("using Internet address: "+peerport);
+        	log.info("Listening on Internet address: "+peerport);
         });
         
         // start up the server
         log.info("PB Index Server starting up");
         serverManager.start();
-        
+
+        serverManager.join();
+		Utils.getInstance().cleanUp();
     }
 
 }

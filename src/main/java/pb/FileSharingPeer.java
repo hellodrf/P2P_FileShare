@@ -10,12 +10,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,21 +31,10 @@ import pb.managers.ServerManager;
 import pb.managers.endpoint.Endpoint;
 import pb.utils.Utils;
 
-
-/**
- * TODO: for Project 2B The FileSharingPeer is a simple example of using a
- * PeerManager to control both a server and any number of client connections to
- * a server/peers. <br/>
- * <b>Please see the video recording on Canvas for an explanation of what the
- * the FileSharingPeer is meant to do.</b>
- * 
- * @author aaron
- *
- */
 public class FileSharingPeer {
-	private static Logger log = Logger.getLogger(FileSharingPeer.class.getName());
+	private static final Logger log = Logger.getLogger(FileSharingPeer.class.getName());
 
-	/**
+	/*
 	 * Events that the peers use between themselves.
 	 */
 
@@ -106,9 +91,11 @@ public class FileSharingPeer {
 	private static final byte[] buffer = new byte[chunkSize];
 
 	/**
-	 * number of files to share/query
+	 * number of remaining files to share/query
 	 */
 	private static final AtomicInteger fileCount = new AtomicInteger(0);
+
+	private static final Set<String> fileFailed = new HashSet<>();
 
 	/**
 	 * Read up to chunkSize bytes of a file and send to client. If we have not
@@ -134,13 +121,12 @@ public class FileSharingPeer {
 					endpoint.emit(fileContents, "");
 					in.close();
 				} else {
-					Utils.getInstance().setTimeout(() -> {
-						continueTransmittingFile(in, endpoint);
-					}, 100); // limit throughput to about 160kB/s, hopefully your bandwidth can keep up :-)
+					Utils.getInstance().setTimeout(() -> continueTransmittingFile(in, endpoint), 1);
+					// throughput about 16*1,000 = 16,000kB/s, hopefully your bandwidth can keep up :-)
 				}
 			}
 		} catch (IOException e) {
-			endpoint.emit(fileError);
+			endpoint.emit(fileError, "IO Error");
 		}
 	}
 
@@ -148,36 +134,36 @@ public class FileSharingPeer {
 	 * Test for the file existence and then start transmitting it. Emit
 	 * {@link #fileError} if file can't be accessed.
 	 * 
-	 * @param filename
-	 * @param endpoint
+	 * @param filename to be sent
+	 * @param endpoint current endpoint
 	 */
 	public static void startTransmittingFile(String filename, Endpoint endpoint) {
 		try {
 			InputStream in = new FileInputStream(filename);
 			continueTransmittingFile(in, endpoint);
 		} catch (FileNotFoundException e) {
-			endpoint.emit(fileError);
+			endpoint.emit(fileError, "File not found");
 		}
 	}
 
 	/**
 	 * Emit a filename as an index update if possible, close when all done.
 	 * 
-	 * @param filenames
-	 * @param endpoint
+	 * @param filenames to be sent to client
+	 * @param endpoint current endpoint
 	 */
-	public static void emitIndexUpdate(String peerport, List<String> filenames, Endpoint endpoint,
+	public static void emitIndexUpdate(String peerPort, List<String> filenames, Endpoint endpoint,
 			ClientManager clientManager) {
 		if (filenames.size() == 0) {
 			clientManager.shutdown(); // no more index updates to do
 		} else {
 			String filename = filenames.remove(0);
-			log.info("Sending index update: " + peerport + ":" + filename);
+			log.info("Sending index update: " + peerPort + ":" + filename);
 			// an index update has the format: host:port:filename
-			endpoint.emit(IndexServer.indexUpdate, peerport + ":" + filename);
-			Utils.getInstance().setTimeout(() -> {
-				emitIndexUpdate(peerport, filenames, endpoint, clientManager);
-			}, 100); // send 10 index updates per second, this shouldn't kill the bandwidth :-]
+			endpoint.emit(IndexServer.indexUpdate, peerPort + ":" + filename);
+			Utils.getInstance().setTimeout(() ->
+					emitIndexUpdate(peerPort, filenames, endpoint, clientManager), 100);
+			// send 10 index updates per second, this shouldn't kill the bandwidth :-]
 		}
 	}
 
@@ -185,31 +171,23 @@ public class FileSharingPeer {
 	 * Open a client connection to the index server and send the filenames to update
 	 * the index.
 	 * 
-	 * @param filenames
-	 * @param peerManager
-	 * @throws InterruptedException
-	 * @throws UnknownHostException
+	 * @param filenames to be sent to index server
+	 * @param peerManager current peerManager
+	 * @throws InterruptedException peerManager.connect
+	 * @throws UnknownHostException peerManager.connect
 	 */
-	public static void uploadFileList(List<String> filenames, PeerManager peerManager, String peerport)
+	public static void uploadFileList(List<String> filenames, PeerManager peerManager, String peerPort)
 			throws UnknownHostException, InterruptedException {
 		// connect to the index server and tell it the files we are sharing
 		ClientManager clientManager = peerManager.connect(indexServerPort, host);
 
-		/* Done
-		 * TODO for project 2B. Listen for peerStarted, peerUpdate, peerStopped on the
-		 * clientManager.
-		 * Further listen on the endpoint when available for
-		 * indexUpdateError events. Print out any index update errors that occur. Use
-		 * emitIndexUpdate(...) to send the index updates. Print out something
-		 * informative for the events when they they occur.
-		 */
 		clientManager.on(PeerManager.peerStarted, (args) -> {
 			Endpoint endpoint = (Endpoint) args[0];
 			log.info("IndexServer session started: " + endpoint.getOtherEndpointId());
 			endpoint.on(IndexServer.indexUpdateError, (args1 ->
 					log.warning("An error occurred while updating index: " + args1[0])));
 			// push index update
-			emitIndexUpdate(peerport, filenames, endpoint, clientManager);
+			emitIndexUpdate(peerPort, filenames, endpoint, clientManager);
 		}).on(PeerManager.peerError, (args) -> {
 			Endpoint endpoint = (Endpoint) args[0];
 			log.warning("IndexServer session ended in error: " + endpoint.getOtherEndpointId());
@@ -225,28 +203,19 @@ public class FileSharingPeer {
 	 * index server to say which files are being shared.
 	 * 
 	 * @param files list of file names to share
-	 * @throws InterruptedException
-	 * @throws IOException
+	 * @throws IOException input.readLine()
 	 */
-	private static void shareFiles(String[] files) throws InterruptedException, IOException {
+	private static void shareFiles(String[] files) throws IOException {
 		List<String> filenames = new ArrayList<>(Arrays.asList(files));
 		PeerManager peerManager = new PeerManager(peerPort);
 
-		/* Done
-		 * TODO for project 2B. Listen for peerStarted, peerStopped, peerError and
-		 * peerServerManager on the peerManager.
-		 * Listen for getFile events on the endpoint when available and use startTransmittingFile(...) to handle such
-		 * events. Start uploading the file names that are being shared on when the
-		 * peerServerManager is ready and when the ioThread event has been received.
-		 * Print out something informative for the events when they occur.
-		 */
 		peerManager.on(PeerManager.peerStarted, (args)-> {
 			Endpoint endpoint = (Endpoint) args[0];
 			log.info("Peer session started: " + endpoint.getOtherEndpointId());
 			// listen for fileError & getFile
-			endpoint.on(fileError, (args1 -> {
-				log.warning("Could not find file queried by " + endpoint.getOtherEndpointId());
-			})).on(getFile, (args2 -> {
+			endpoint.on(fileError, (args1 ->
+					log.warning("File error - " + endpoint.getOtherEndpointId() + ": " + args1[0]))
+			).on(getFile, (args2 -> {
 				String file = (String)args2[0];
 				log.info("Starting transmission:" + file);
 				startTransmittingFile(file, endpoint);
@@ -285,21 +254,13 @@ public class FileSharingPeer {
 	/**
 	 * Process a query response from the index server and download the file
 	 *
-	 * @throws InterruptedException
+	 * @throws InterruptedException peerManager.connect
 	 */
 	private static void getFileFromPeer(PeerManager peerManager, String response) throws InterruptedException {
 		// Create a independent client manager (thread) for each download
 		// response has the format: PeerIP:PeerPort:filename
 		String[] parts = response.split(":", 3);
 		ClientManager clientManager;
-
-		/*
-		 * Done.
-		 * TODO for project 2B. Check that the individual parts returned from the server
-		 * have the correct format and that we make a connection to the peer. Print out
-		 * any errors and just return in this case. Otherwise you have a clientManager
-		 * that has connected.
-		 */
 
 		String ipv4_regex = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}" +
 				"(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
@@ -312,56 +273,64 @@ public class FileSharingPeer {
 				clientManager = peerManager.connect(Integer.parseInt(parts[1]), parts[0]);
 			} catch (UnknownHostException e) {
 				 log.severe("Could not connect to peer: " + parts[0] + ":" + parts[1]);
+				synchronized (fileFailed) {
+					fileFailed.add(parts[2]);
+				}
 				return;
 			}
 		} else {
 			log.severe("Illegal peer address: " + Arrays.toString(parts));
+			synchronized (fileFailed) {
+				fileFailed.add(parts[2]);
+			}
 			return;
 		}
 
 		try {
 			//OutputStream out = new FileOutputStream(parts[2]);
 			// Debug only: avoid filename clashing
-			OutputStream out = new FileOutputStream(parts[2] + "_" +
-					java.time.LocalDateTime.now().toString() + ".txt");
+			OutputStream out = new FileOutputStream(java.time.LocalDateTime.now().toString() + "_" + parts[2]);
 
-			/* Done
-			 * TODO for project 2B. listen for peerStarted, peerStopped and peerError events
-			 * on the clientManager. Listen for fileContents and fileError events on the
-			 * endpoint when available and handle them appropriately. Handle error
-			 * conditions by printing something informative and shutting down the
-			 * connection. Remember to emit a getFile event to request the file form the
-			 * peer. Print out something informative for the events that occur.
-			 */
 			clientManager.on(PeerManager.peerStarted, (args) -> {
 				Endpoint endpoint = (Endpoint) args[0];
 				log.info("Peer session started: " + endpoint.getOtherEndpointId());
 				// listen for fileError & fileContents
-				endpoint.on(fileError, (args1) -> log.severe("An error occurred while fetching file: " + parts[2]))
-						.on(fileContents, (args1) -> {
-							try {
-								if (args1[0] instanceof String && args1[0].equals("")) {
-									out.flush();
-									out.close();
-									log.info("File download complete: " + parts[2]);
-									clientManager.shutdown();
-									if (fileCount.decrementAndGet() == 0) {
-										log.info("All file received! Shutting down");
-										endpoint.close();
-									}
-								} else {
-									if (args1[0] instanceof String) {
-										out.write(Base64.decodeBase64((String) args1[0]));
-										log.info("Data received for file: " + parts[2]);
-									}
-								}
-							} catch (IOException e) {
-								System.out.println("Could not save file: " + parts[2]);
+				endpoint.on(fileError, (args1) -> {
+					synchronized (fileFailed) {
+						fileFailed.add(parts[2]);
+					}
+					log.severe("An error occurred while fetching file: " + parts[2]);
+					System.out.println("ERROR: Failed to download file: "+ parts[2]);
+				}).on(fileContents, (args1) -> {
+					try {
+						if (args1[0] instanceof String && args1[0].equals("")) {
+							out.flush();
+							out.close();
+							log.info("File download complete: " + parts[2]);
+							System.out.println("File downloaded: " + parts[2]);
+							clientManager.shutdown();
+							if (fileCount.decrementAndGet() == 0) {
+								log.info("All files received, shutting down");
+								System.out.println("All file(s) received! Shutting down now");
 								endpoint.close();
 							}
-						});
+						} else {
+							if (args1[0] instanceof String) {
+								out.write(Base64.decodeBase64((String) args1[0]));
+								log.info("Data received for file: " + parts[2]);
+							}
+						}
+					} catch (IOException e) {
+						synchronized (fileFailed) {
+							fileFailed.add(parts[2]);
+						}
+						System.out.println("Could not save file: " + parts[2]);
+						endpoint.close();
+					}
+				});
 				log.info("Request emitted to " + endpoint.getOtherEndpointId());
 				endpoint.emit(getFile, parts[2]);
+				System.out.println("Now downloading file: " + parts[2] + " from " + endpoint.getOtherEndpointId());
 			}).on(PeerManager.peerStopped, (args) -> {
 				Endpoint endpoint = (Endpoint) args[0];
 				log.info("Peer session ended: " + endpoint.getOtherEndpointId());
@@ -378,7 +347,7 @@ public class FileSharingPeer {
 			 * downloading before the jvm quits.
 			 */			
 		} catch (FileNotFoundException e) {
-			System.out.println("Could not create file: " + parts[2]);
+			System.out.println("ERROR: Could not create file: " + parts[2]);
 		}
 	}
 
@@ -387,8 +356,8 @@ public class FileSharingPeer {
 	 * query responses.
 	 * 
 	 * @param keywords list of keywords to query for and download matching files
-	 * @throws InterruptedException
-	 * @throws UnknownHostException
+	 * @throws InterruptedException peerManager.connect
+	 * @throws UnknownHostException peerManager.connect
 	 */
 	private static void queryFiles(String[] keywords) throws UnknownHostException, InterruptedException {
 		fileCount.set(keywords.length);
@@ -397,14 +366,6 @@ public class FileSharingPeer {
 		PeerManager peerManager = new PeerManager(peerPort);
 		ClientManager clientManager = peerManager.connect(indexServerPort, host);
 
-		/* Done
-		 * TODO for project 2B. Listen for peerStarted, peerStopped and peerError events
-		 * on the clientManager. Listen for queryResponse and queryError events on the
-		 * endpoint when it is available, and handle them appropriately. Simply shutdown
-		 * the connection if errors occur. Use getFileFromPeer(...) when query responses
-		 * arrive. Make sure to emit your queryIndex event to actually query the index
-		 * server. Print out something informative for the events that occur.
-		 */
 		clientManager.on(PeerManager.peerStarted, (args) -> {
 			Endpoint endpoint = (Endpoint) args[0];
 			endpoint.on(IndexServer.queryResponse, (args1) -> {
@@ -421,8 +382,11 @@ public class FileSharingPeer {
 					log.warning("IndexServer session ended abruptly");
 				}
 			}).on(IndexServer.queryError, (args1 -> {
-				log.severe("Could not process your query, please check again");
-				endpoint.close();
+				synchronized (fileFailed) {
+					fileFailed.add((String) args1[0]);
+				}
+				log.severe("Could not find " + args1[0] + " on index server " + endpoint.getOtherEndpointId());
+				System.out.println("Could not find " + args1[0] + " on index server " + endpoint.getOtherEndpointId());
 			}));
 			endpoint.emit(IndexServer.queryIndex, query);
 		}).on(PeerManager.peerStopped, (args) -> {
@@ -507,6 +471,11 @@ public class FileSharingPeer {
 		} else if (cmd.hasOption("query")) {
 			String[] keywords = cmd.getOptionValues("query");
 			queryFiles(keywords);
+			synchronized (fileFailed) {
+				for (String file: fileFailed) {
+					System.out.println("Failed to download: " + file);
+				}
+			}
 		} else {
 			System.out.println("must use either the -query or -share option");
 			help(options);

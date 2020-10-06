@@ -21,12 +21,11 @@ import pb.protocols.session.SessionProtocol;
 /**
  * Manages all of the clients for the server and the server's state.
  * 
- * @see {@link pb.managers.Manager}
- * @see {@link pb.managers.IOThread}
- * @see {@link pb.managers.endpoint.Endpoint}
- * @see {@link pb.protocols.Protocol}
- * @see {@link pb.protocols.IRequestReplyProtocol}
- * @author aaron
+ * @see pb.managers.Manager
+ * @see pb.managers.IOThread
+ * @see pb.managers.endpoint.Endpoint
+ * @see pb.protocols.Protocol
+ * @see pb.protocols.IRequestReplyProtocol
  *
  */
 public class ServerManager extends Manager implements ISessionProtocolHandler,
@@ -163,15 +162,6 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 			return org.apache.commons.codec.digest.DigestUtils.sha256Hex(password).equals(this.password);
 		}
 	}
-
-	/*
-	 * TODO: for Project 2B. Use one of these methods appropriately for the event
-	 * emitted, when your server receives a correct password. Usually a single
-	 * shutdown method would suffice, but for servers it is convenient to have
-	 * different methods, depending on how the administrator wants to shut the
-	 * server down, like if they are in a rush, or can wait for existing clients to
-	 * finish up gracefully, or if they can't wait at all, etc.
-	 */
 	
 	public void shutdown() {
 		log.info("server shutdown called");
@@ -179,13 +169,13 @@ public class ServerManager extends Manager implements ISessionProtocolHandler,
 		ioThread.shutDown();
 	}
 	
-	public void forceShutdown() { // Skywalker style :-)
+	public void forceShutdown() {
 		log.warning("server force shutdown called");
 		forceShutdown=true; // this will send session stops to all the clients
 		ioThread.shutDown();
 	}
 	
-	public void vaderShutdown() { // Darkside style :-]
+	public void vaderShutdown() {
 		log.warning("server vader shutdown called");
 		vaderShutdown=true; // this will just close all of the endpoints abruptly
 		ioThread.shutDown();

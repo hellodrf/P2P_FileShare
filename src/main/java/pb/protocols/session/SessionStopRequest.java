@@ -6,8 +6,7 @@ import pb.protocols.Message;
 
 /**
  * Message to request the session to stop.
- * @see {@link pb.protocols.session.SessionProtocol}
- * @author aaron
+ * @see pb.protocols.session.SessionProtocol
  *
  */
 public class SessionStopRequest extends Message {

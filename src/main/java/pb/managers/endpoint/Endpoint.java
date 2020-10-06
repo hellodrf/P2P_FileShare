@@ -32,24 +32,23 @@ import pb.protocols.session.SessionProtocol;
  * Any number of protocols can be handled by the endpoint, but there can be only
  * one instance of each protocol running at a time.
  * 
- * @see {@link pb.managers.Manager}
- * @see {@link pb.protocols.session.SessionProtocol}
- * @see {@link pb.protocols.keepalive.KeepAliveProtocol}
- * @author aaron
+ * @see pb.managers.Manager
+ * @see pb.protocols.session.SessionProtocol
+ * @see pb.protocols.keepalive.KeepAliveProtocol
  *
  */
 public class Endpoint extends Eventable {
-	private static Logger log = Logger.getLogger(Endpoint.class.getName());
+	private static final Logger log = Logger.getLogger(Endpoint.class.getName());
 	
 	/**
 	 * The socket this endpoint is wrapped around.
 	 */
-	private Socket socket;
+	private final Socket socket;
 	
 	/**
 	 * The manager to report to when things happen.
 	 */
-	private IEndpointHandler manager;
+	private final IEndpointHandler manager;
 	
 	/**
 	 * The input data stream on the socket.
@@ -64,7 +63,7 @@ public class Endpoint extends Eventable {
 	/**
 	 * A protocol name to protocol map, of protocols in use.
 	 */
-	private Map<String,Protocol> protocols;
+	private final Map<String,Protocol> protocols;
 	
 	/**
 	 * Timeout id to use.
@@ -74,7 +73,7 @@ public class Endpoint extends Eventable {
 	/**
 	 * Oustanding ids
 	 */
-	private Set<Long> outstandingIds;
+	private final Set<Long> outstandingIds;
 	
 	/**
 	 * stopped flag
@@ -172,8 +171,7 @@ public class Endpoint extends Eventable {
 		synchronized(protocols) {
 			protocolNames = new HashSet<String>(protocols.keySet());
 		}
-		if(protocolNames!=null)
-			protocolNames.forEach((protocolName)->{stopProtocol(protocolName);});
+		protocolNames.forEach(this::stopProtocol);
 		
 		/*
 		 *  The endpoint thread itself will not process any more messages if we
@@ -183,7 +181,7 @@ public class Endpoint extends Eventable {
 		 */
 		interrupt();
 		
-		/**
+		/*
 		 * At this point there may be exactly one _currently executing_ timer
 		 * thread callback (which is a pain, but it can't be inside the
 		 * send methods because these methods are synchronized), plus there may
@@ -255,9 +253,11 @@ public class Endpoint extends Eventable {
 				log.info("received "+msg.getName()+" for protocol "+msg.getProtocolName()+" from "+getOtherEndpointId());
 				switch(msg.getType()) {
 				case Request:
+					assert protocol != null;
 					((IRequestReplyProtocol)protocol).receiveRequest(msg);
 					break;
 				case Reply:
+					assert protocol != null;
 					((IRequestReplyProtocol)protocol).receiveReply(msg);
 					break;
 				}
@@ -281,7 +281,7 @@ public class Endpoint extends Eventable {
 	/**
 	 * Start handling a protocol. Only one instance of a protocol can be handled
 	 * at a time. Either client or server may start/initiate the use of the protocol.
-	 * @see {@link pb.protocols.Protocol}
+	 * @see pb.protocols.Protocol
 	 * @param protocol the protocol to handle
 	 * @throws ProtocolAlreadyRunning if there is already an instance of this protocol
 	 * running on this endpoint
@@ -300,7 +300,7 @@ public class Endpoint extends Eventable {
 	/**
 	 * Stop a protocol that is already being handled. It will be removed
 	 * from the endpoints set of handled protocols.
-	 * @see {@link pb.protocols.Protocol}
+	 * @see pb.protocols.Protocol
 	 * @param protocolName the protocol name to stop
 	 */
 	public void stopProtocol(String protocolName) {

@@ -407,8 +407,8 @@ public class FileSharingPeer {
 	}
 
 	private static void help(Options options) {
-		String header = "PB Peer for Unimelb COMP90015\n\n";
-		String footer = "\ncontact aharwood@unimelb.edu.au for issues.";
+		String header = "PB Peer\n\n";
+		String footer = "\ncontact dsgroup13@unimelb.edu.au for issues.";
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp("pb.Peer", header, options, footer, true);
 		System.exit(-1);

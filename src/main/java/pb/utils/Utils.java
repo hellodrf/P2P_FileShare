@@ -7,9 +7,7 @@ import pb.protocols.ICallback;
 
 /**
  * A singleton class to provide various utility functions. It must always be
- * accessed statically as Utils.getInstance()...
- * 
- * @author aaron
+ * accessed statically as Utils.getInstance()
  *
  */
 public class Utils {

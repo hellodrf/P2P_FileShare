@@ -16,19 +16,18 @@ import pb.utils.Utils;
 /**
  * Server main. Parse command line options and provide default values.
  * 
- * @see {@link pb.managers.ServerManager}
- * @see {@link pb.utils.Utils}
- * @author aaron
+ * @see pb.managers.ServerManager
+ * @see pb.utils.Utils
  *
  */
 public class Server {
-	private static Logger log = Logger.getLogger(Server.class.getName());
+	private static final Logger log = Logger.getLogger(Server.class.getName());
 	private static int port=Utils.serverPort; // default port number for the server
 	
 
 	private static void help(Options options){
-		String header = "PB Server for Unimelb COMP90015\n\n";
-		String footer = "\ncontact aharwood@unimelb.edu.au for issues.";
+		String header = "PB Server\n\n";
+		String footer = "\ncontact dsgroup13@unimelb.edu.au for issues.";
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp("pb.Server", header, options, footer, true);
 		System.exit(-1);
@@ -52,8 +51,9 @@ public class Server {
 		} catch (ParseException e1) {
 			help(options);
 		}
-        
-        if(cmd.hasOption("port")){
+
+		assert cmd != null;
+		if(cmd.hasOption("port")){
         	try{
         		port = Integer.parseInt(cmd.getOptionValue("port"));
 			} catch (NumberFormatException e){
@@ -70,13 +70,6 @@ public class Server {
         // the JVM from terminating
         ServerManager serverManager = new ServerManager(port);
         serverManager.start();
-        // The simple server does not do any application logic, but will
-        // (when you have implemented it in the ServerManager class)
-        // just continue to run until it is terminated by ctrl+C, is killed
-        // by some other OS signal, or an "admin" client connects and sends 
-        // a "SERVER_SHUTDOWN" or "SERVER_FORCE_SHUTDOWN" or if really needed ...
-        // "SERVER_VADER_SHUTDOWN" event to the server, over the event protocol. 
-        // See AdminClient.java for more info on what is expected.
         
         // the very last thing to do
         Utils.getInstance().cleanUp();

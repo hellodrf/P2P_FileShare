@@ -13,7 +13,7 @@ import pb.protocols.IRequestReplyProtocol;
 /**
  * Provides all of the protocol logic for both client and server to undertake
  * the KeepAlive protocol. In the KeepAlive protocol, the client sends a
- * KeepAlive request to the server every {@link #keepAliveInterval} seconds using
+ * KeepAlive request to the server every #keepAliveInterval seconds using
  * {@link pb.utils.Utils#setTimeout(pb.protocols.ICallback, long)}. The server must
  * send a KeepAlive response to the client upon receiving the request. If the
  * client does not receive the response within {@link #keepAliveTimeout} seconds
@@ -27,19 +27,19 @@ import pb.protocols.IRequestReplyProtocol;
  * up to {@link #keepAliveTimeout} seconds before it assumes the client is dead. The protocol stops
  * when a timeout occurs.
  * 
- * @see {@link pb.managers.Manager}
- * @see {@link pb.managers.endpoint.Endpoint}
- * @see {@link pb.protocols.Message}
- * @see {@link pb.protocols.keepalive.KeepAliveRequest}
- * @see {@link pb.protocols.keepalive.KeepaliveRespopnse}
- * @see {@link pb.protocols.Protocol}
- * @see {@link pb.protocols.IRequestReqplyProtocol}
+ * @see pb.managers.Manager
+ * @see pb.managers.endpoint.Endpoint
+ * @see pb.protocols.Message}
+ * @see pb.protocols.keepalive.KeepAliveRequest
+ * @see pb.protocols.keepalive.KeepAliveReply
+ * @see pb.protocols.Protocol
+ * @see pb.protocols.IRequestReplyProtocol
  * @author aaron
  *
  */
 public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol {
-	@SuppressWarnings("unused")
-	private static Logger log = Logger.getLogger(KeepAliveProtocol.class.getName());
+
+	private static final Logger log = Logger.getLogger(KeepAliveProtocol.class.getName());
 
 	/**
 	 * Name of this protocol. 
@@ -49,12 +49,12 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 	/**
 	 * Default keep alive request interval
 	 */
-	private int keepAliveRequestInterval = 20000;
+	private final int keepAliveRequestInterval = 20000;
 	
 	/**
 	 * Default keep alive timeout
 	 */
-	private int keepAliveTimeout = 40000;
+	private final int keepAliveTimeout = 40000;
 	
 	// Use of volatile is because the timer thread is different to the endpoint thread
 	// and they make use of the same flags/variables.
@@ -156,9 +156,7 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 		if(stopped)return;
 		sendRequest(new KeepAliveRequest());
 		final long timeSent = Instant.now().toEpochMilli();
-		Utils.getInstance().setTimeout(()->{
-			sendAnotherRequest();
-		}, keepAliveRequestInterval);
+		Utils.getInstance().setTimeout(this::sendAnotherRequest, keepAliveRequestInterval);
 		Utils.getInstance().setTimeout(()->{
 			checkServerTimeout(timeSent);
 		}, keepAliveTimeout);
@@ -197,7 +195,6 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 	 */
 	@Override
 	public void receiveReply(Message msg) {
-		@SuppressWarnings("unused")
 		KeepAliveReply keepAliveResponse = (KeepAliveReply) msg;
 		timeReplySeen = Instant.now().toEpochMilli();
 	}
@@ -208,7 +205,6 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 	 */
 	@Override
 	public void receiveRequest(Message msg) {
-		@SuppressWarnings("unused")
 		KeepAliveRequest keepAliveRequest = (KeepAliveRequest) msg;
 		timeRequestSeen = Instant.now().toEpochMilli();
 		sendReply(new KeepAliveReply());
@@ -223,6 +219,4 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 		KeepAliveReply keepAliveResponse = (KeepAliveReply) msg;
 		endpoint.send(keepAliveResponse);
 	}
-	
-	
 }

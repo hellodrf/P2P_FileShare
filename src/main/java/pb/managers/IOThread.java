@@ -15,15 +15,14 @@ import java.util.logging.Logger;
  * connection, else the IOThread will not accept any more connections until this
  * connection is finished.
  * 
- * @see {@link pb.managers.ServerManager}
- * @author aaron
+ * @see pb.managers.ServerManager
  *
  */
 public class IOThread extends Thread {
-	private static Logger log = Logger.getLogger(IOThread.class.getName());
+	private static final Logger log = Logger.getLogger(IOThread.class.getName());
 	private ServerSocket serverSocket=null;
-	private int port;
-	private ServerManager serverManager;
+	private final int port;
+	private final ServerManager serverManager;
 	
 	/**
 	 * Emitted when the io thread has started. The argument

@@ -8,11 +8,10 @@ import pb.protocols.Protocol;
 import pb.utils.Eventable;
 
 /**
- * Manager base class. Methods must be overriden.
+ * Manager base class. Methods must be overridden.
  * 
- * @see {@link pb.managers.ServerManager}
- * @see {@link pb.managers.ClientManager}
- * @author aaron
+ * @see pb.managers.ServerManager
+ * @see pb.managers.ClientManager
  *
  */
 public class Manager extends Eventable implements IProtocolHandler, IEndpointHandler{

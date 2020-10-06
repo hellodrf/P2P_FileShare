@@ -21,8 +21,8 @@ public class AdminClient  {
 	private static String host=Utils.serverHost; // default host for the server
 
 	private static void help(Options options){
-		String header = "PB Admin Client for Unimelb COMP90015\n\n";
-		String footer = "\ncontact aharwood@unimelb.edu.au for issues.";
+		String header = "PB Admin Client\n\n";
+		String footer = "\ncontact dsgroup13@unimelb.edu.au for issues.";
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp("pb.Client", header, options, footer, true);
 		System.exit(-1);

@@ -21,19 +21,18 @@ import pb.protocols.session.SessionProtocol;
 /**
  * Manages the connection to the server and the client's state.
  * 
- * @see {@link pb.managers.Manager}
- * @see {@link pb.managers.endpoint.Endpoint}
- * @see {@link pb.protocols.Protocol}
- * @see {@link pb.protocols.IRequestReplyProtocol}
- * @author aaron
+ * @see pb.managers.Manager
+ * @see pb.managers.endpoint.Endpoint
+ * @see pb.protocols.Protocol
+ * @see pb.protocols.IRequestReplyProtocol
  *
  */
 public class ClientManager extends Manager implements ISessionProtocolHandler,
 	IKeepAliveProtocolHandler, IEventProtocolHandler
 {
-	private static Logger log = Logger.getLogger(ClientManager.class.getName());
+	private static final Logger log = Logger.getLogger(ClientManager.class.getName());
 	
-	/**
+	/*
 	 * Events emitted by the ClientManager
 	 */
 	
@@ -76,12 +75,12 @@ public class ClientManager extends Manager implements ISessionProtocolHandler,
 	/**
 	 * The host to connect to.
 	 */
-	private String host;
+	private final String host;
 	
 	/**
 	 * The host's port to connect to.
 	 */
-	private int port;
+	private final int port;
 	
 	/**
 	 * When a connection fails, should we retry.
@@ -115,9 +114,7 @@ public class ClientManager extends Manager implements ISessionProtocolHandler,
 				// higher layer
 				try {
 					Thread.sleep(5000); // short pause before retrying
-				} catch (InterruptedException e) {
-					continue;
-				} 
+				} catch (InterruptedException ignored) {}
 			} else {
 				// connection ended cleanly, so we can terminate this manager
 				return;

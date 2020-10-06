@@ -15,9 +15,9 @@ import pb.managers.endpoint.Endpoint;
  *
  */
 public class PeerManager extends Manager {
-	private static Logger log = Logger.getLogger(PeerManager.class.getName());
+	private static final Logger log = Logger.getLogger(PeerManager.class.getName());
 	
-	/**
+	/*
 	 * Events that this peer manager emits.
 	 */
 	
@@ -66,7 +66,7 @@ public class PeerManager extends Manager {
 	/**
 	 * The client managers are for connecting to the server and other peers.
 	 */
-	private Set<ClientManager> clientManagers;
+	private final Set<ClientManager> clientManagers;
 	
 	/**
 	 * The server manager is for accepting connections from other peers.
@@ -76,7 +76,7 @@ public class PeerManager extends Manager {
 	/**
 	 * My server port
 	 */
-	private int myServerPort;
+	private final int myServerPort;
 	
 	/**
 	 * Initialize with a port for the server manager for this peer

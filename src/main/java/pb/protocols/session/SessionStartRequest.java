@@ -6,8 +6,7 @@ import pb.protocols.Message;
 
 /**
  * Message sent to request the session to start.
- * @see {@link pb.protocols.session.SessionProtocol}
- * @author aaron
+ * @see pb.protocols.session.SessionProtocol
  *
  */
 public class SessionStartRequest extends Message {

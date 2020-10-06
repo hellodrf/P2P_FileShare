@@ -27,8 +27,6 @@ import org.json.simple.parser.ParseException;
  * ArrayList<Document> docs2 = (ArrayList<Document>) doc3.get("docList");
  * }
  * </pre>
- * @author aaron
- *
  */
 public class Document {
 	

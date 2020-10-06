@@ -19,19 +19,18 @@ import pb.protocols.IRequestReplyProtocol;
  * e.g. perhaps the server is becoming overloaded and needs to shed some
  * clients.
  * 
- * @see {@link pb.managers.Manager}
- * @see {@link pb.managers.endpoint.Endpoint}
- * @see {@link pb.Protocol}
- * @see {@link pb.protocols.IRequestReplyProtocol}
- * @see {@link pb.protocols.session.SessionStartRequest}
- * @see {@link pb.protocols.session.SessionStartReply}
- * @see {@link pb.protocols.session.SessionStopRequest}
- * @see {@link pb.protocols.session.SessionStopReply}
- * @author aaron
+ * @see pb.managers.Manager
+ * @see pb.managers.endpoint.Endpoint
+ * @see pb.protocols.IRequestReplyProtocol
+ * @see pb.protocols.session.SessionStartRequest
+ * @see pb.protocols.session.SessionStartReply
+ * @see pb.protocols.session.SessionStopRequest
+ * @see pb.protocols.session.SessionStopReply
+
  *
  */
 public class SessionProtocol extends Protocol implements IRequestReplyProtocol {
-	private static Logger log = Logger.getLogger(SessionProtocol.class.getName());
+	private static final Logger log = Logger.getLogger(SessionProtocol.class.getName());
 	
 	/**
 	 * The unique name of the protocol.
@@ -41,7 +40,7 @@ public class SessionProtocol extends Protocol implements IRequestReplyProtocol {
 	/**
 	 * Default request timeout
 	 */
-	private int sessionTimeout = 40000;
+	private final int sessionTimeout = 40000;
 	
 	// Use of volatile is in case the thread that calls stopProtocol is different
 	// to the endpoint thread, although in this case it hardly needed.

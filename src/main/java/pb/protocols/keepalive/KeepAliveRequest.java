@@ -6,7 +6,7 @@ import pb.protocols.Message;
 
 /**
  * Request message for the KeepAlive protocol.
- * @see {@link pb.protocols.keepalive.KeepAliveProtocol}
+ * @see pb.protocols.keepalive.KeepAliveProtocol
  * @author aaron
  *
  */

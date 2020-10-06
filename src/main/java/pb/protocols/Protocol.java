@@ -5,11 +5,10 @@ import pb.managers.endpoint.Endpoint;
 
 /**
  * All protocols have an endpoint and a manager.
- * @see {@link pb.managers.endpoint.Endpoint}
- * @see {@link pb.managers.Manager}
- * @see {@link pb.protocols.session.SessionProtocol}
- * @see {@link pb.protocols.keepalive.KeepAliveProtocol}
- * @author aaron
+ * @see pb.managers.endpoint.Endpoint
+ * @see pb.managers.Manager
+ * @see pb.protocols.session.SessionProtocol
+ * @see pb.protocols.keepalive.KeepAliveProtocol
  *
  */
 public class Protocol {

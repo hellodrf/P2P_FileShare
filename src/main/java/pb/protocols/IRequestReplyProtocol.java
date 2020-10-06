@@ -4,14 +4,13 @@ package pb.protocols;
 /**
  * Request/reply protocol objects must implement this interface.
  * 
- * @see {@link #startAsClient()}
- * @see {@link #startAsServer()}
- * @see {@link #sendRequest(Message)}
- * @see {@link #receiveReply(Message)}
- * @see {@link #receiveRequest(Message)}
- * @see {@link #sendReply(Message)}
- * @see {@link pb.protocols.Message}
- * @author aaron
+ * @see #startAsClient()
+ * @see #startAsServer()
+ * @see #sendRequest(Message)
+ * @see #receiveReply(Message)
+ * @see #receiveRequest(Message)
+ * @see #sendReply(Message)
+ * @see pb.protocols.Message
  *
  */
 public interface IRequestReplyProtocol {

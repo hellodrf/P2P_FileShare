@@ -14,8 +14,7 @@ import pb.protocols.session.SessionStopRequest;
  * received UTF-8 line of text in JSON format, as an object that represents the
  * message.
  * 
- * @see {@link pb.protocols.Protocol}
- * @author aaron
+ * @see pb.protocols.Protocol
  *
  */
 public class Message {

@@ -26,9 +26,8 @@ import pb.utils.Utils;
 
 /**
  * Simple index server to discover peers that have files.
- * @author aaron
- *
  */
+
 public class IndexServer {
 	private static final Logger log = Logger.getLogger(IndexServer.class.getName());
 	

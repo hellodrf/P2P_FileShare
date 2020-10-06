@@ -12,7 +12,6 @@ import pb.protocols.Protocol;
  * An event protocol for applications communicate using an asynchronous
  * event system. Each event can include a simple parameter that must
  * be a String. Complex data should be marshaled into a String.
- * @author aaron
  *
  */
 public class EventProtocol extends Protocol implements IRequestReplyProtocol {

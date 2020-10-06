@@ -6,8 +6,7 @@ import pb.protocols.Message;
 
 /**
  * Reply message for the KeepAlive protocol.
- * @see {@link pb.protocols.keepalive.KeepAliveProtocol}
- * @author aaron
+ * @see pb.protocols.keepalive.KeepAliveProtocol
  *
  */
 public class KeepAliveReply extends Message {

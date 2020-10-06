@@ -11,8 +11,6 @@ import pb.protocols.event.IEventCallback;
 /**
  * Simple eventable object. Does not provide for
  * canceling event callbacks.
- * @author aaron
- *
  */
 public class Eventable extends Thread {
 	private static Logger log = Logger.getLogger(Eventable.class.getName());

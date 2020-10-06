@@ -15,22 +15,6 @@ import pb.managers.ServerManager;
 import pb.managers.endpoint.Endpoint;
 import pb.utils.Utils;
 
-/**
- * TODO: for project 2B. Admin Client main. Parse command line options and
- * provide default values. Modify this client to take command line options
- * -shutdown, -force and -vader (explained further below). The client should
- * emit the appropriate event, either: {@link pb.managers.ServerManager#shutdownServer},
- * {@link pb.managers.ServerManager#forceShutdownServer} or
- * {@link pb.managers.ServerManager#vaderShutdownServer} and then simply stop the
- * session and terminate. Make sure the client does not emit the event until the
- * sessionStarted event has been emitted, etc. And the client should attempt to
- * cleanly terminate, not just system exit.
- * 
- * @see {@link pb.managers.ClientManager}
- * @see {@link pb.utils.Utils}
- * @author aaron
- *
- */
 public class AdminClient  {
 	private static final Logger log = Logger.getLogger(AdminClient.class.getName());
 	private static int port=Utils.serverPort; // default port number for the server
@@ -58,16 +42,6 @@ public class AdminClient  {
 		options.addOption("shutdown",false,"tell server to shutdown");
 		options.addOption("force",false,"tell server to shutdown (force)");
 		options.addOption("vader",false,"tell server to shutdown (vader)");
-        
-        /*
-		 * TODO for project 2B. Include a command line option to read a secret
-		 * (password) from the user. It can simply be a plain text password entered as a
-		 * command line option. Use "password" as the name of the option, i.e.
-		 * "-password". Add a boolean option (i.e. it does not have an argument) for
-		 * each of the shutdown possibilities: shutdown, force, vader. In other words,
-		 * the user would enter -shutdown for just regular shutdown, -shutdown -force
-		 * for force shutdown and -shutdown -vader for vader shutdown.
-		 */
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;

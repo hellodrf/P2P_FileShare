@@ -34,7 +34,6 @@ import pb.protocols.IRequestReplyProtocol;
  * @see pb.protocols.keepalive.KeepAliveReply
  * @see pb.protocols.Protocol
  * @see pb.protocols.IRequestReplyProtocol
- * @author aaron
  *
  */
 public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol {
@@ -81,9 +80,9 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 	private volatile boolean timeout=false; 
 	
 	/**
-	 * Initialise the protocol with an endopint and a manager.
-	 * @param endpoint
-	 * @param manager
+	 * Initialise the protocol with an endpoint and a manager.
+	 * @param endpoint current endpoint
+	 * @param manager current manager
 	 */
 	public KeepAliveProtocol(Endpoint endpoint, IKeepAliveProtocolHandler manager) {
 		super(endpoint,(Manager)manager);
@@ -127,7 +126,6 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 		if(stopped)return;
 		long now = Instant.now().toEpochMilli();
 		if(now-timeRequestSeen > keepAliveTimeout) {
-			// timeout :-(
 			manager.endpointTimedOut(endpoint,this);
 			stopProtocol();
 		} else {
@@ -181,7 +179,7 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 
 	/**
 	 * Send a keep alive request.
-	 * @param msg
+	 * @param msg message to send
 	 */
 	@Override
 	public void sendRequest(Message msg) {
@@ -191,7 +189,7 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 
 	/**
 	 * If we receive a keep alive reply, make a note of the time.
-	 * @param msg
+	 * @param msg message to send
 	 */
 	@Override
 	public void receiveReply(Message msg) {
@@ -201,7 +199,7 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 
 	/**
 	 * Received a keep alive request so make a note of when that was.
-	 * @param msg
+	 * @param msg message to send
 	 */
 	@Override
 	public void receiveRequest(Message msg) {
@@ -212,7 +210,7 @@ public class KeepAliveProtocol extends Protocol implements IRequestReplyProtocol
 
 	/**
 	 * Simply send a reply to a keep alive request.
-	 * @param msg
+	 * @param msg message to send
 	 */
 	@Override
 	public void sendReply(Message msg) {

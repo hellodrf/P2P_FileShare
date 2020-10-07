@@ -167,15 +167,6 @@ public class IndexServer {
 		synchronized(keyValueMap) {
 			filenames=new ArrayList<>(keyValueMap.keySet());
 		}
-		/*
-		for(String filename : filenames) {
-			String fileLower = filename.toLowerCase();
-			for(String term : terms) {
-				if(fileLower.contains(term.toLowerCase())) {
-					hits.add(filename);
-				}
-			}
-		}*/
 
 		for(String term : terms) {
 			boolean isHit = false;
@@ -206,8 +197,8 @@ public class IndexServer {
 	}
 	
 	private static void help(Options options){
-		String header = "PB Index Server for Unimelb COMP90015\n\n";
-		String footer = "\ncontact aharwood@unimelb.edu.au for issues.";
+		String header = "PB Index Server\n\n";
+		String footer = "\ncontact dsgroup13@unimelb.edu.au for issues.";
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp("pb.IndexServer", header, options, footer, true);
 		System.exit(-1);

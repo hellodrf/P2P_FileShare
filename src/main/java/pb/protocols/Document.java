@@ -56,7 +56,7 @@ public class Document {
 	
 	@SuppressWarnings("unchecked")
 	public void append(String key,boolean val){
-		obj.put(key, Boolean.valueOf(val));
+		obj.put(key, val);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -74,12 +74,12 @@ public class Document {
 	
 	@SuppressWarnings("unchecked")
 	public void append(String key,long val){
-		obj.put(key, Long.valueOf(val));
+		obj.put(key, val);
 	}
 	
 	@SuppressWarnings("unchecked")
 	public void append(String key,int val){
-		obj.put(key, Integer.valueOf(val));
+		obj.put(key, val);
 	}
 	
 	public String toJson(){
@@ -91,9 +91,7 @@ public class Document {
 		try {
 			JSONObject obj  = (JSONObject) parser.parse(json);
 			return new Document(obj);
-		} catch (ParseException e) {
-			return new Document();
-		} catch (ClassCastException e){
+		} catch (ParseException | ClassCastException e) {
 			return new Document();
 		}
 	}

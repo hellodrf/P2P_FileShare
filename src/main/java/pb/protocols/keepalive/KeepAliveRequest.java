@@ -13,7 +13,7 @@ public class KeepAliveRequest extends Message {
 	static final public String name = "KeepAliveRequest";
 	
 	/**
-	 * Initialiser when given message parameters explicitly. Note that
+	 * Initializer when given message parameters explicitly. Note that
 	 * in this message there are no additional parameters.
 	 */
 	public KeepAliveRequest() {
@@ -21,7 +21,7 @@ public class KeepAliveRequest extends Message {
 	}
 	
 	/**
-	 * Initialiser when given message parameters in a doc. Must throw
+	 * Initializer when given message parameters in a doc. Must throw
 	 * InvalidMessage if any of the required parameters are not
 	 * in the doc, including the appropriate msg parameter.
 	 * @param doc with the message details

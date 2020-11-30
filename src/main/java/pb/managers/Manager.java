@@ -5,7 +5,7 @@ import pb.managers.endpoint.Endpoint;
 import pb.managers.endpoint.IEndpointHandler;
 import pb.protocols.IProtocolHandler;
 import pb.protocols.Protocol;
-import pb.utils.Eventable;
+import pb.utils.EventThread;
 
 /**
  * Manager base class. Methods must be overridden.
@@ -14,7 +14,7 @@ import pb.utils.Eventable;
  * @see pb.managers.ClientManager
  *
  */
-public class Manager extends Eventable implements IProtocolHandler, IEndpointHandler{
+public class Manager extends EventThread implements IProtocolHandler, IEndpointHandler{
 	
 	/**
 	 * Shut this manager down, closing all connections gracefully where possible.
@@ -79,7 +79,6 @@ public class Manager extends Eventable implements IProtocolHandler, IEndpointHan
 	public void protocolViolation(Endpoint endpoint,Protocol protocol) {
 		
 	}
-	
 
 	/**
 	 * The endpoint has requested a protocol to start. If the protocol

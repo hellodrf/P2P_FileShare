@@ -21,7 +21,7 @@ public class Message {
 	/**
 	 * Messages are either a request or a reply.
 	 */
-	static public enum Type {
+	public enum Type {
 		Request,
 		Reply
 	}

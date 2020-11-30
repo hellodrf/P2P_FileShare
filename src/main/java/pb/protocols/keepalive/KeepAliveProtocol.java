@@ -29,7 +29,7 @@ import pb.protocols.IRequestReplyProtocol;
  * 
  * @see pb.managers.Manager
  * @see pb.managers.endpoint.Endpoint
- * @see pb.protocols.Message}
+ * @see pb.protocols.Message
  * @see pb.protocols.keepalive.KeepAliveRequest
  * @see pb.protocols.keepalive.KeepAliveReply
  * @see pb.protocols.Protocol

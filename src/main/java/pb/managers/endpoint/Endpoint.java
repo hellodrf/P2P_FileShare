@@ -3,14 +3,16 @@ package pb.managers.endpoint;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Condition;
 import java.util.logging.Logger;
 
-import pb.utils.Eventable;
+import pb.utils.EventThread;
 import pb.utils.Utils;
 import pb.protocols.InvalidMessage;
 import pb.protocols.Message;
@@ -37,7 +39,7 @@ import pb.protocols.session.SessionProtocol;
  * @see pb.protocols.keepalive.KeepAliveProtocol
  *
  */
-public class Endpoint extends Eventable {
+public class Endpoint extends EventThread {
 	private static final Logger log = Logger.getLogger(Endpoint.class.getName());
 	
 	/**
@@ -54,7 +56,7 @@ public class Endpoint extends Eventable {
 	 * The input data stream on the socket.
 	 */
 	private DataInputStream in=null;
-	
+
 	/**
 	 * The output data stream on the socket.
 	 */
@@ -71,7 +73,7 @@ public class Endpoint extends Eventable {
 	private long timeoutId=1;
 	
 	/**
-	 * Oustanding ids
+	 * Outstanding ids
 	 */
 	private final Set<Long> outstandingIds;
 	
@@ -139,7 +141,7 @@ public class Endpoint extends Eventable {
 		}, timeInterval);
 		return sent;
 	}
-	
+
 	/**
 	 * Send a message in reply to a message that has a timeout id associated
 	 * with it. If it is received in time then it will ensure that a timeout
@@ -291,7 +293,7 @@ public class Endpoint extends Eventable {
 			if(protocols.containsKey(protocol.getProtocolName())){
 				throw new ProtocolAlreadyRunning();
 			} else {
-				protocols.put(protocol.getProtocolName(),protocol);
+				protocols.put(protocol.getProtocolName(), protocol);
 				log.info("now handling protocol: "+protocol.getProtocolName());
 			}
 		}

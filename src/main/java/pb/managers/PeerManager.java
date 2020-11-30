@@ -168,5 +168,4 @@ public class PeerManager extends Manager {
 			}
 		});
 	}
-
 }

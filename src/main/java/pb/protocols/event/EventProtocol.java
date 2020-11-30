@@ -15,7 +15,7 @@ import pb.protocols.Protocol;
  *
  */
 public class EventProtocol extends Protocol implements IRequestReplyProtocol {
-	private static Logger log = Logger.getLogger(EventProtocol.class.getName());
+	private static final Logger log = Logger.getLogger(EventProtocol.class.getName());
 	
 	public static final String protocolName = "EventProtocol";
 	
@@ -26,13 +26,11 @@ public class EventProtocol extends Protocol implements IRequestReplyProtocol {
 	/**
 	 * Event protocol will listen to all events emitted on the endpoint and
 	 * transmit them over the endpoint.
-	 * @param endpoint
-	 * @param manager
 	 */
 	public EventProtocol(Endpoint endpoint, IEventProtocolHandler manager) {
 		super(endpoint, (Manager)manager);	
 		// Register an event to listen for all events ("*") emitted on this endpoint and
-		// send them to the remote end point; making sure thats events have
+		// send them to the remote end point; making sure that events have
 		// only a String argument
 		endpoint.on("*", (args)->{
 			String eventName = (String) args[0];
@@ -46,9 +44,7 @@ public class EventProtocol extends Protocol implements IRequestReplyProtocol {
 	}
 	
 	/**
-	 * Send and event to the other side, The Doors style :-)
-	 * @param eventName
-	 * @param eventData
+	 * Send and event to the other side
 	 */
 	public void sendEvent(String eventName, String eventData) {
 		if(stopped)return;
@@ -84,7 +80,6 @@ public class EventProtocol extends Protocol implements IRequestReplyProtocol {
 	@Override
 	public void receiveReply(Message msg) {
 		
-		
 	}
 
 	@Override
@@ -97,8 +92,7 @@ public class EventProtocol extends Protocol implements IRequestReplyProtocol {
 
 	@Override
 	public void sendReply(Message msg)  {
-		
-		
+
 	}
 	
 	@Override
